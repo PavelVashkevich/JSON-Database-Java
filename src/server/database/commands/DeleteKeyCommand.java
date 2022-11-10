@@ -1,24 +1,24 @@
 package server.database.commands;
 
 import server.database.Response;
-import server.database.SimulatedDatabase;
+import server.database.DatabaseHandler;
 
 public class DeleteKeyCommand implements DatabaseCommand {
 
-    private final SimulatedDatabase database;
+    private final DatabaseHandler databaseHandler;
     private String key;
 
-    public DeleteKeyCommand(SimulatedDatabase database) {
-        this.database = database;
+    public DeleteKeyCommand(DatabaseHandler databaseHandler) {
+        this.databaseHandler = databaseHandler;
     }
 
-    public DeleteKeyCommand(SimulatedDatabase database, String key) {
-        this(database);
+    public DeleteKeyCommand(DatabaseHandler databaseHandler, String key) {
+        this(databaseHandler);
         this.key = key;
     }
 
     @Override
     public Response execute() {
-        return database.deleteKey(key);
+        return databaseHandler.deleteKey(key);
     }
 }

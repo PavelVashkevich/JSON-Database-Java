@@ -1,18 +1,18 @@
 package server.database.commands;
 
 import server.database.Response;
-import server.database.SimulatedDatabase;
+import server.database.DatabaseHandler;
 
 public class SetValueCommand implements DatabaseCommand {
-    private final SimulatedDatabase database;
+    private final DatabaseHandler databaseHandler;
     private String key;
     private String value;
 
-    public SetValueCommand(SimulatedDatabase database) {
-        this.database = database;
+    public SetValueCommand(DatabaseHandler database) {
+        this.databaseHandler = database;
     }
 
-    public SetValueCommand(SimulatedDatabase database, String key, String value) {
+    public SetValueCommand(DatabaseHandler database, String key, String value) {
         this(database);
         this.key = key;
         this.value = value;
@@ -20,6 +20,6 @@ public class SetValueCommand implements DatabaseCommand {
 
     @Override
     public Response execute() {
-        return database.saveValue(key, value);
+        return databaseHandler.saveValue(key, value);
     }
 }
