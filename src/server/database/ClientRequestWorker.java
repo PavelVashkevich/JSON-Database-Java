@@ -1,6 +1,8 @@
 package server.database;
 
 import client.ClientRequest;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import server.MessageResourceBundle;
 import server.database.commands.DatabaseCommand;
 import server.database.commands.DatabaseController;
@@ -10,7 +12,7 @@ import server.database.commands.SetValueCommand;
 
 import java.util.concurrent.Callable;
 
-public class ClientRequestWorker implements Callable<Response> {
+public class ClientRequestWorker implements Callable<DatabaseResponse> {
 
     private final DatabaseHandler databaseHandler;
     private final ClientRequest clientRequest;
@@ -21,33 +23,50 @@ public class ClientRequestWorker implements Callable<Response> {
     }
 
     @Override
-    public Response call() {
+    public DatabaseResponse call() {
         DatabaseController databaseController = new DatabaseController();
-        Response databaseResponse;
+        DatabaseResponse databaseResponse;
+        String[] key;
         switch (clientRequest.getType()) {
             case "set":
-                DatabaseCommand setCommand = new SetValueCommand(databaseHandler, clientRequest.getKey(), clientRequest.getValue());
+                key = convertJsonElementToStringArray(clientRequest.getKey());
+                DatabaseCommand setCommand = new SetValueCommand(databaseHandler, key, clientRequest.getValue());
                 databaseController.setDatabaseCommand(setCommand);
                 databaseResponse = databaseController.executeCommand();
                 break;
             case "get":
-                DatabaseCommand getCommand = new GetValueCommand(databaseHandler, clientRequest.getKey());
+                key = convertJsonElementToStringArray(clientRequest.getKey());
+                DatabaseCommand getCommand = new GetValueCommand(databaseHandler, key);
                 databaseController.setDatabaseCommand(getCommand);
                 databaseResponse = databaseController.executeCommand();
                 break;
             case "delete":
-                DatabaseCommand deleteCommand = new DeleteKeyCommand(databaseHandler, clientRequest.getKey());
+                key = convertJsonElementToStringArray(clientRequest.getKey());
+                DatabaseCommand deleteCommand = new DeleteKeyCommand(databaseHandler, key);
                 databaseController.setDatabaseCommand(deleteCommand);
                 databaseResponse = databaseController.executeCommand();
                 break;
             case "exit":
-                databaseResponse = new Response.ResponseBuilder().setResponse(MessageResourceBundle.OK_MSG).build();
+                databaseResponse = new DatabaseResponse.ResponseBuilder().setResponse(MessageResourceBundle.OK_MSG).build();
                 break;
             default:
-                databaseResponse = new Response.ResponseBuilder()
+                databaseResponse = new DatabaseResponse.ResponseBuilder()
                         .setResponse(MessageResourceBundle.UNKNOWN_CMD_MSG).build();
                 break;
         }
         return databaseResponse;
+    }
+
+    private String[] convertJsonElementToStringArray(JsonElement jsonElement) {
+        if (jsonElement.isJsonArray()) {
+            JsonArray jsonArray = jsonElement.getAsJsonArray();
+            String[] result = new String[jsonArray.size()];
+            for (int i = 0; i < jsonArray.size(); i++) {
+                result[i] = jsonArray.get(i).getAsString();
+            }
+            return result;
+        } else {
+            return new String[] {jsonElement.getAsString()};
+        }
     }
 }

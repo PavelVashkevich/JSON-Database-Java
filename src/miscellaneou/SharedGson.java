@@ -1,6 +1,8 @@
 package miscellaneou;
 
+import client.ClientRequest;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class SharedGson {
     private static Gson gsonInstance;
@@ -11,7 +13,8 @@ public class SharedGson {
 
     public static Gson getGson() {
         if (gsonInstance == null) {
-            gsonInstance = new Gson();
+            gsonInstance = new GsonBuilder().registerTypeAdapter(ClientRequest.class,
+                    new ClientRequestDeserializer()).create();
         }
         return gsonInstance;
     }

@@ -1,10 +1,12 @@
 package server;
 
-import com.google.gson.Gson;
-import client.Request;
-import server.database.Response;
-import server.database.SimulatedDatabase;
-import server.database.commands.*;
+import client.ClientRequest;
+import miscellaneou.LogPrinter;
+import miscellaneou.ServerConfig;
+import miscellaneou.SharedGson;
+import server.database.ClientRequestWorker;
+import server.database.DatabaseHandler;
+import server.database.DatabaseResponse;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,64 +14,45 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
 
 public class DatabaseServer {
-    private static final String IP_ADDRESS = "127.0.0.1";
-    private static final int DATABASE_SERVER_PORT = 23456;
-    private static final int MAX_IN_CONN_QUEUE = 50;
-    private final SimulatedDatabase database;
-
-    public DatabaseServer(SimulatedDatabase database) {
-        this.database = database;
-    }
+    //    private final String DATABASE_PATH = System.getProperty("user.dir") + "\\JSON Database\\task\\src\\server\\data\\db.json";
+    private final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+    private final DatabaseHandler databaseHandler = new DatabaseHandler();
 
     public void run() {
-        System.out.println("Server started!");
-        DatabaseController databaseController = new DatabaseController();
-        Gson gson = new Gson();
-        boolean serverRunning = true;
-        try (ServerSocket serverSocket = new ServerSocket(DATABASE_SERVER_PORT, MAX_IN_CONN_QUEUE, InetAddress.getByName(IP_ADDRESS))) {
-            while (serverRunning) {
+        LogPrinter.simpleConsolePrint("Server started!");
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+        try (ServerSocket serverSocket = new ServerSocket(ServerConfig.DATABASE_SERVER_PORT,
+                ServerConfig.DATABASE_SERVER_BACKLOG_QUEUE, InetAddress.getByName(ServerConfig.DATABASE_SERVER_IP_ADDRESS))) {
+            while (true) {
                 try (Socket socket = serverSocket.accept();
                      DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
                      DataInputStream inputStream = new DataInputStream(socket.getInputStream())) {
-
-                    Response databaseResponse;
-                    Request userRequest = gson.fromJson(inputStream.readUTF(), Request.class);
-
-                    switch (userRequest.getType()) {
-                        case "exit":
-                            databaseResponse = new Response.ResponseBuilder()
-                                    .setResponse(MessageResourceBundle.OK_MSG).build();
-                            serverRunning = false;
-                            break;
-                        case "set":
-                            DatabaseCommand setCommand = new SetValueCommand(database, userRequest.getKey(), userRequest.getValue());
-                            databaseController.setDatabaseCommand(setCommand);
-                            databaseResponse = databaseController.executeCommand();
-                            break;
-                        case "get":
-                            DatabaseCommand getCommand = new GetValueCommand(database, userRequest.getKey());
-                            databaseController.setDatabaseCommand(getCommand);
-                            databaseResponse = databaseController.executeCommand();
-                            break;
-                        case "delete":
-                            DatabaseCommand deleteCommand = new DeleteKeyCommand(database, userRequest.getKey());
-                            databaseController.setDatabaseCommand(deleteCommand);
-                            databaseResponse = databaseController.executeCommand();
-                            break;
-                        default:
-                            databaseResponse = new Response.ResponseBuilder()
-                                    .setResponse(MessageResourceBundle.UNKNOWN_CMD_MSG).build();
-                            break;
+                    ClientRequest clientRequest = SharedGson.getGson().fromJson(inputStream.readUTF(), ClientRequest.class);
+                    Future<DatabaseResponse> responseFuture;
+                    if (!clientRequest.getType().equals("exit")) {
+                        responseFuture =  executorService.submit(new ClientRequestWorker(databaseHandler, clientRequest));
+                        DatabaseResponse response = responseFuture.get();
+                        outputStream.writeUTF(SharedGson.getGson().toJson(response));
+                    } else {
+                        responseFuture = executorService.submit(new ClientRequestWorker(databaseHandler, clientRequest));
+                        DatabaseResponse response = responseFuture.get();
+                        outputStream.writeUTF(SharedGson.getGson().toJson(response));
+                        executorService.shutdown();
+                        break;
                     }
-                    outputStream.writeUTF(gson.toJson(databaseResponse));
-                } catch (IOException exception) {
-                    throw new RuntimeException(exception);
+                } catch (ExecutionException | InterruptedException e) {
+                    LogPrinter.log(Level.SEVERE, "while processing client request following error occurred: " + e.getMessage());
                 }
             }
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
+        } catch (IOException e) {
+            LogPrinter.log(Level.SEVERE, "server socket error: " + e.getMessage());;
         }
     }
 }

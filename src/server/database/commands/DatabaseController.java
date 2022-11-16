@@ -1,6 +1,6 @@
 package server.database.commands;
 
-import server.database.Response;
+import server.database.DatabaseResponse;
 
 public class DatabaseController {
     private DatabaseCommand databaseCommand;
@@ -10,7 +10,7 @@ public class DatabaseController {
         this.databaseCommand = databaseCommand;
     }
 
-    public Response executeCommand() {
+    public DatabaseResponse executeCommand() {
         return databaseCommand.execute();
     }
 }

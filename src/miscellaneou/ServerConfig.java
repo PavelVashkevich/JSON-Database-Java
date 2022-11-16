@@ -9,5 +9,5 @@ public class ServerConfig {
 
     private ServerConfig() {
         // No instance
-        }
+    }
 }

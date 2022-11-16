@@ -1,11 +1,13 @@
 package server.database;
 
-public class Response {
+import com.google.gson.JsonElement;
+
+public class DatabaseResponse {
     private String response;
-    private String value;
+    private JsonElement value;
     private String reason;
 
-    public Response(String response, String value, String reason) {
+    public DatabaseResponse(String response, JsonElement value, String reason) {
         this.response = response;
         this.value = value;
         this.reason = reason;
@@ -15,7 +17,7 @@ public class Response {
         return response;
     }
 
-    public String getValue() {
+    public JsonElement getValue() {
         return value;
     }
 
@@ -27,7 +29,7 @@ public class Response {
         this.response = response;
     }
 
-    public void setValue(String value) {
+    public void setValue(JsonElement value) {
         this.value = value;
     }
 
@@ -35,10 +37,9 @@ public class Response {
         this.reason = reason;
     }
 
-
     public static class ResponseBuilder {
         private String response;
-        private String value;
+        private JsonElement value;
         private String reason;
 
         public ResponseBuilder setResponse(String response) {
@@ -46,7 +47,7 @@ public class Response {
             return this;
         }
 
-        public ResponseBuilder setValue(String value) {
+        public ResponseBuilder setValue(JsonElement value) {
             this.value = value;
             return this;
         }
@@ -56,9 +57,8 @@ public class Response {
             return this;
         }
 
-        public Response build() {
-            return new Response(response, value, reason);
+        public DatabaseResponse build() {
+            return new DatabaseResponse(response, value, reason);
         }
-
     }
 }

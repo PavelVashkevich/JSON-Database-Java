@@ -1,9 +1,8 @@
 package server.database.commands;
 
-import server.database.Response;
+import server.database.DatabaseResponse;
 
 public interface DatabaseCommand {
 
-
-    Response execute();
+    DatabaseResponse execute();
 }
