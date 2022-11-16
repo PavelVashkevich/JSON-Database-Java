@@ -1,37 +1,36 @@
 package client;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import miscellaneou.LogPrinter;
+import miscellaneou.ServerConfig;
+import miscellaneou.SharedGson;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.logging.Level;
 
 
 public class ClientApp {
-    private static final String IP_ADDRESS = "127.0.0.1";
-    private static final int DATABASE_SERVER_PORT = 23456;
-    private final Request request;
+    private final ClientRequest clientRequest;
 
-    public ClientApp(Request request) {
-        this.request = request;
+    public ClientApp(ClientRequest clientRequest) {
+        this.clientRequest = clientRequest;
     }
 
     public void sendRequestToServer() {
-        System.out.println("Client started!");
-        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-        try (Socket socket = new Socket(InetAddress.getByName(IP_ADDRESS), DATABASE_SERVER_PORT);
+        LogPrinter.simpleConsolePrint("Client started!");
+        try (Socket socket = new Socket(InetAddress.getByName(ServerConfig.DATABASE_SERVER_IP_ADDRESS), ServerConfig.DATABASE_SERVER_PORT);
              DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream())) {
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-            String jsonRequest = gson.toJson(request);
-            dataOutputStream.writeUTF(jsonRequest);
-            System.out.println("Sent: " + jsonRequest);
+            String jsonClientRequest = SharedGson.getGson().toJson(clientRequest);
+            dataOutputStream.writeUTF(jsonClientRequest);
+            LogPrinter.simpleConsolePrint(("Sent: " + jsonClientRequest));
             String receivedResponse = dataInputStream.readUTF();
-            System.out.println("Received: " + receivedResponse);
+            LogPrinter.simpleConsolePrint("Received: " + receivedResponse);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LogPrinter.log(Level.SEVERE, "while sending request to the server following error occurred: " + e.getMessage());
         }
     }
 }
