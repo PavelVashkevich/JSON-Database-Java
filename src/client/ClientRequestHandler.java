@@ -26,7 +26,6 @@ public class ClientRequestHandler {
     private static String value;
 
     public ClientRequest createRequest(String[] userCliInput) {
-        System.out.println(Arrays.toString(userCliInput));
         JCommander.newBuilder().addObject(this).build().parse(userCliInput);
         try {
             if (fileName != null) {

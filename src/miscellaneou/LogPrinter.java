@@ -9,9 +9,10 @@ import java.util.logging.Logger;
 public class LogPrinter {
 
     private static Logger logger;
+    private static final String LOGGER_PATH = System.getProperty("user.dir") + "\\src\\logging.properties";
 
     static {
-        try(FileInputStream propertiesFile = new FileInputStream("JSON Database\\task\\src\\logging.properties")) {
+        try(FileInputStream propertiesFile = new FileInputStream(LOGGER_PATH)) {
             LogManager.getLogManager().readConfiguration(propertiesFile);
             logger = Logger.getLogger(LogPrinter.class.getName());
         } catch (IOException e) {

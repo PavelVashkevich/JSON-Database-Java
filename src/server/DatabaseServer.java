@@ -21,7 +21,6 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 public class DatabaseServer {
-    //    private final String DATABASE_PATH = System.getProperty("user.dir") + "\\JSON Database\\task\\src\\server\\data\\db.json";
     private final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
     private final DatabaseHandler databaseHandler = new DatabaseHandler();
 
